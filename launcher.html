@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Chargement…</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&family=DM+Sans:wght@400;600;800&display=swap');
+:root{--bg:#060608;--s1:#0e0e14;--s2:#16161f;--red:#ff2d55;--yellow:#ffd60a;--blue:#00c8ff;--green:#30d158;--text:#f2f2fa;--muted:#5a5a78;--border:rgba(255,255,255,0.06);}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+.hero{flex-shrink:0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;height:40vh;min-height:180px;}
+.hero-gradient{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(6,6,8,0.1) 0%,rgba(6,6,8,0.95) 100%);z-index:2;}
+.hero-emoji{position:relative;z-index:3;font-size:72px;text-shadow:0 8px 40px rgba(0,0,0,0.8);animation:float 4s ease-in-out infinite;display:none;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.hero-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:4;background:var(--bg);}
+.spinner{width:28px;height:28px;border:3px solid rgba(255,45,85,0.2);border-top-color:#ff2d55;border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:1px;}
+.card{position:relative;z-index:10;background:var(--s1);border-radius:24px 24px 0 0;border-top:1px solid var(--border);padding:22px 22px 48px;flex:1;overflow-y:auto;}
+.ep-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.ep-badge{background:var(--red);color:#fff;font-family:'Russo One',sans-serif;font-size:11px;letter-spacing:1px;padding:3px 10px;border-radius:6px;}
+.new-badge{background:var(--yellow);color:#000;font-size:10px;font-weight:800;padding:3px 10px;border-radius:6px;text-transform:uppercase;}
+.genre-badge{font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;border:1px solid;text-transform:uppercase;letter-spacing:0.5px;}
+.g-action{color:#ff2d55;border-color:rgba(255,45,85,0.4);background:rgba(255,45,85,0.08);}
+.g-arcade{color:#ffd60a;border-color:rgba(255,214,10,0.4);background:rgba(255,214,10,0.08);}
+.g-puzzle{color:#b87fff;border-color:rgba(184,127,255,0.4);background:rgba(184,127,255,0.08);}
+.g-strategie{color:#00c8ff;border-color:rgba(0,200,255,0.4);background:rgba(0,200,255,0.08);}
+.g-idle{color:#5aff8a;border-color:rgba(90,255,138,0.4);background:rgba(90,255,138,0.08);}
+.game-sub{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);margin-bottom:5px;}
+.game-title{font-family:'Russo One',sans-serif;font-size:clamp(22px,6vw,32px);letter-spacing:0.5px;line-height:1.1;margin-bottom:8px;}
+.game-desc{font-size:13px;color:var(--muted);font-weight:600;line-height:1.7;margin-bottom:16px;}
+.stats-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.stat-pill{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:50px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--muted);}
+.stat-pill .val{color:var(--text);font-weight:800;}
+.likes-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.react-btn{display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:800;font-size:14px;padding:9px 16px;border-radius:50px;cursor:pointer;transition:all 0.2s;}
+.react-btn:hover{border-color:rgba(255,255,255,0.15);}
+.react-btn.liked{border-color:var(--green);color:var(--green);background:rgba(48,209,88,0.08);}
+.react-btn.disliked{border-color:var(--red);color:var(--red);background:rgba(255,45,85,0.08);}
+.actions{display:flex;gap:10px;margin-bottom:24px;}
+.btn-play{flex:1;background:var(--red);color:#fff;border:none;font-family:'Russo One',sans-serif;font-size:17px;letter-spacing:1px;padding:16px;border-radius:16px;cursor:pointer;transition:background 0.15s,transform 0.1s;}
+.btn-play:hover{background:#ff0a3c;}
+.btn-play:active{transform:scale(0.97);}
+.btn-back{background:var(--s2);color:var(--muted);border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-weight:800;font-size:14px;padding:16px 18px;border-radius:16px;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.btn-back:hover{border-color:var(--red);color:var(--red);}
+.sep{height:1px;background:var(--border);margin:0 0 20px;}
+.section-title{font-family:'Russo One',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.stars-row{display:flex;gap:6px;margin-bottom:12px;}
+.star{font-size:28px;cursor:pointer;transition:transform 0.1s;filter:grayscale(1) opacity(0.3);}
+.star.active{filter:none;}
+.star:hover{transform:scale(1.2);filter:none;}
+
+
+
+.btn-submit{width:100%;background:var(--red);color:#fff;border:none;font-family:'Russo One',sans-serif;font-size:14px;letter-spacing:1px;padding:13px;border-radius:12px;cursor:pointer;transition:background 0.15s;margin-bottom:20px;}
+.btn-submit:hover{background:#ff0a3c;}
+.btn-login-prompt{width:100%;background:var(--s2);color:var(--muted);border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-weight:800;font-size:13px;padding:13px;border-radius:12px;cursor:pointer;transition:all 0.2s;margin-bottom:20px;}
+.btn-login-prompt:hover{border-color:var(--red);color:var(--red);}
+
+
+
+
+
+
+
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--s2);border:1px solid var(--border);color:var(--text);font-weight:700;font-size:14px;padding:12px 24px;border-radius:50px;z-index:200;transition:transform 0.3s ease;white-space:nowrap;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.success{border-color:rgba(48,209,88,0.5);color:var(--green);}
+.toast.error{border-color:rgba(255,45,85,0.5);color:#ff2d55;}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.confirm-ov{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;padding:24px;}
+.confirm-ov.open{display:flex;}
+.confirm-box{background:#12121e;border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:28px 24px;width:100%;max-width:320px;text-align:center;}
+.confirm-icon{font-size:36px;margin-bottom:12px;}
+.confirm-title{font-family:'Russo One',sans-serif;font-size:18px;color:#f2f2fa;margin-bottom:8px;}
+.confirm-sub{font-size:13px;color:#5a5a78;font-weight:600;margin-bottom:24px;line-height:1.5;}
+.confirm-btns{display:flex;gap:10px;}
+.confirm-yes{flex:1;background:#ff2d55;color:#fff;border:none;font-family:'Russo One',sans-serif;font-size:14px;padding:14px;border-radius:12px;cursor:pointer;}
+.confirm-no{flex:1;background:rgba(255,255,255,0.05);color:#aaa;border:1px solid rgba(255,255,255,0.1);font-family:'DM Sans',sans-serif;font-weight:800;font-size:14px;padding:14px;border-radius:12px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="hero" id="hero">
+  <div class="hero-loading" id="hero-loading"><div class="spinner"></div><div class="loading-txt">Chargement…</div></div>
+  <div class="hero-gradient"></div>
+  <div class="hero-emoji" id="hero-emoji">🎮</div>
+</div>
+
+<div class="card">
+  <div class="ep-row">
+    <span class="ep-badge" id="ep-badge">ÉP. 01</span>
+    <span class="new-badge" id="new-badge" style="display:none">Nouveau</span>
+    <span class="genre-badge" id="genre-badge">arcade</span>
+  </div>
+  <div class="game-sub" id="game-sub">…</div>
+  <div class="game-title" id="game-title">Chargement…</div>
+  <div class="game-desc" id="game-desc"></div>
+  <div class="stats-row">
+    <div class="stat-pill">👁 <span class="val" id="stat-v">—</span> visites</div>
+    
+  </div>
+  <div class="likes-row">
+    <button class="react-btn" id="btn-like" onclick="toggleLike('like')">👍 <span id="cnt-like">0</span></button>
+    <button class="react-btn" id="btn-dislike" onclick="toggleLike('dislike')">👎 <span id="cnt-dislike">0</span></button>
+  </div>
+  <div class="actions">
+    <button class="btn-play" onclick="jouer()">▶ JOUER</button>
+    <button class="btn-back" onclick="ouvrirConfirm()">← Accueil</button>
+  </div>
+  <div class="sep"></div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://yhdyivsxovztidhddewj.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InloZHlpdnN4b3Z6dGlkaGRkZXdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NTcyOTUsImV4cCI6MjA5MzAzMzI5NX0.BCs4_GvRdSHs7bZ7Kcp-xsBDlk23oIHm1F4PXngQ9GA';
+
+async function db(path,method='GET',body=null){
+  const r=await fetch(`${SB}/rest/v1/${path}`,{method,headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':method==='POST'?'return=minimal':''},body:body?JSON.stringify(body):null});
+  if(r.status===204||r.status===201)return null;
+  return r.json();
+}
+
+function T(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;setTimeout(()=>t.className='toast',2800);}
+function tAgo(d){const diff=Date.now()-new Date(d);const m=Math.floor(diff/60000);if(m<1)return'à l\'instant';if(m<60)return`il y a ${m}min`;const h=Math.floor(m/60);if(h<24)return`il y a ${h}h`;return`il y a ${Math.floor(h/24)}j`;}
+
+const p=new URLSearchParams(window.location.search);
+const jeuId=p.get('id')||'';
+const jeuFichier=p.get('fichier')||'';
+const jeuTitre=p.get('titre')||'Jeu';
+const jeuDesc=p.get('desc')||'';
+const jeuGenre=p.get('genre')||'arcade';
+const jeuEmoji=p.get('emoji')||'🎮';
+const jeuAbonne=p.get('abonne')||'';
+const jeuOriginal=p.get('original')==='true';
+const jeuNouveau=p.get('nouveau')==='true';
+const jeuEp=p.get('ep')||'01';
+
+const CU=JSON.parse(localStorage.getItem('ja_user')||'null');
+const VISITOR=localStorage.getItem('ja_visitor')||(()=>{const t=crypto.randomUUID();localStorage.setItem('ja_visitor',t);return t;})();
+
+document.title=jeuTitre+' — tube_direct';
+document.getElementById('hero-emoji').textContent=jeuEmoji;
+document.getElementById('ep-badge').textContent='ÉP. '+jeuEp;
+document.getElementById('game-title').textContent=jeuTitre;
+document.getElementById('game-desc').textContent=jeuDesc;
+document.getElementById('game-sub').textContent=jeuOriginal?'👑 '+jeuAbonne:'🎮 Créateur : '+jeuAbonne;
+if(jeuNouveau)document.getElementById('new-badge').style.display='';
+const gb=document.getElementById('genre-badge');
+gb.textContent=jeuGenre;gb.className='genre-badge g-'+jeuGenre;
+
+// IMAGE
+async function genererImage(){
+  const hero=document.getElementById('hero');
+  const loading=document.getElementById('hero-loading');
+  const emoji=document.getElementById('hero-emoji');
+  try{
+    // Chercher l'image dans jeux_meta (jeux internes) ET jeux_externes
+    const [meta,ext]=await Promise.all([
+      db(`jeux_meta?id=eq.${jeuId}&select=image_url`).catch(()=>[]),
+      db(`jeux_externes?id=eq.${jeuId}&select=image_url`).catch(()=>[])
+    ]);
+    const imageUrl=(meta&&meta[0]?.image_url)||(ext&&ext[0]?.image_url)||p.get('image_url')||'';
+    if(imageUrl){
+      const img=document.createElement('img');
+      img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;';
+      img.onload=()=>{loading.style.display='none';emoji.style.display='block';};
+      img.onerror=()=>{loading.style.display='none';emoji.style.display='block';};
+      img.src=imageUrl;
+      hero.insertBefore(img,hero.firstChild);
+    }else{
+      loading.style.display='none';
+      emoji.style.display='block';
+    }
+  }catch(e){
+    loading.style.display='none';
+    emoji.style.display='block';
+  }
+}
+
+// VISITE UNIQUE
+async function enregistrerVisite(){
+  await fetch(`${SB}/rest/v1/visites`,{method:'POST',headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'resolution=ignore-duplicates'},body:JSON.stringify({jeu_id:jeuId,visitor_token:VISITOR})});
+}
+
+// STATS
+async function chargerStats(){
+  try{
+    const [visites,likes,dislikes,monLike]=await Promise.all([
+      db(`visites?jeu_id=eq.${jeuId}&select=id`),
+      db(`likes?jeu_id=eq.${jeuId}&type=eq.like&select=id`),
+      db(`likes?jeu_id=eq.${jeuId}&type=eq.dislike&select=id`),
+      CU?db(`likes?jeu_id=eq.${jeuId}&user_id=eq.${CU.id}&select=type`):Promise.resolve([]),
+    ]);
+    document.getElementById('stat-v').textContent=visites.length;
+    const monLikeType=monLike&&monLike[0]?monLike[0].type:null;
+    document.getElementById('btn-like').className='react-btn'+(monLikeType==='like'?' liked':'');
+    document.getElementById('btn-dislike').className='react-btn'+(monLikeType==='dislike'?' disliked':'');
+    document.getElementById('cnt-like').textContent=likes.length;
+    document.getElementById('cnt-dislike').textContent=dislikes.length;
+  }catch(e){}
+}
+
+async function toggleLike(type){
+  if(!CU){T('Connecte-toi depuis l\'accueil !','error');return;}
+  try{
+    const ex=await db(`likes?jeu_id=eq.${jeuId}&user_id=eq.${CU.id}&select=id,type`);
+    if(ex.length){
+      if(ex[0].type===type)await db(`likes?id=eq.${ex[0].id}`,'DELETE');
+      else await db(`likes?id=eq.${ex[0].id}`,'PATCH',{type});
+    }else{
+      await db('likes','POST',{user_id:CU.id,jeu_id:jeuId,type});
+    }
+    chargerStats();
+  }catch(e){T('Erreur','error');}
+}
+
+// AVIS
+let ficheNote=0;
+function setNote(n){ficheNote=n;document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('active',i<n));}
+
+function jouer(){
+  if(jeuFichier)window.location.href=jeuFichier;
+  else T('Fichier introuvable !','error');
+}
+
+enregistrerVisite();
+chargerStats();
+setInterval(()=>chargerStats().catch(()=>{}),15000);
+
+genererImage();
+
+function ouvrirConfirm(){document.getElementById('confirm-ov').classList.add('open');}
+function fermerConfirm(){document.getElementById('confirm-ov').classList.remove('open');}
+</script>
+
+<div class="confirm-ov" id="confirm-ov">
+  <div class="confirm-box">
+    <div class="confirm-icon">🏠</div>
+    <div class="confirm-title">Retour à l'accueil ?</div>
+    <div class="confirm-sub">Tu vas quitter la page du jeu et retourner à l'accueil.</div>
+    <div class="confirm-btns">
+      <button class="confirm-no" onclick="fermerConfirm()">Annuler</button>
+      <button class="confirm-yes" onclick="window.location.href='index.html'">Confirmer</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
