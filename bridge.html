@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeux des Abonnés</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#060608;color:#f2f2fa;font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(255,45,85,.1) 0%,transparent 60%),radial-gradient(ellipse 50% 35% at 85% 90%,rgba(0,200,255,.07) 0%,transparent 60%);pointer-events:none;}
+
+.wrap{position:relative;z-index:1;text-align:center;max-width:340px;width:100%;}
+
+/* LOGO */
+.logo{font-family:'Russo One',system-ui,sans-serif;font-size:28px;background:linear-gradient(90deg,#ff2d55,#ff6b6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+.logo-sub{font-size:13px;color:#5a5a78;font-weight:600;margin-bottom:40px;}
+
+/* LOADING */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;}
+.spinner{width:48px;height:48px;border:3px solid rgba(255,255,255,.06);border-top:3px solid #ff2d55;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:#5a5a78;font-weight:600;}
+.loading-files{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.file-check{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#5a5a78;transition:color .3s;}
+.file-check.ok{color:#30d158;}
+.file-check.err{color:#ff2d55;}
+.file-check .dot{width:8px;height:8px;border-radius:50%;background:#5a5a78;transition:background .3s;flex-shrink:0;}
+.file-check.ok .dot{background:#30d158;}
+.file-check.err .dot{background:#ff2d55;}
+
+/* MAINTENANCE */
+.maint-wrap{display:none;flex-direction:column;align-items:center;gap:16px;}
+.maint-icon{font-size:64px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.maint-title{font-family:'Russo One',system-ui,sans-serif;font-size:22px;text-transform:uppercase;letter-spacing:1px;color:#f2f2fa;}
+.maint-sub{font-size:13px;color:#5a5a78;font-weight:600;line-height:1.7;max-width:280px;}
+.maint-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,149,0,.1);border:1px solid rgba(255,149,0,.25);border-radius:50px;padding:6px 16px;font-size:12px;font-weight:800;color:#ff9500;margin-top:4px;}
+.maint-dot{width:7px;height:7px;border-radius:50%;background:#ff9500;animation:blink 1.2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.retry-btn{margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,.1);color:#8888aa;font-family:'DM Sans',system-ui,sans-serif;font-weight:800;font-size:13px;padding:10px 24px;border-radius:50px;cursor:pointer;transition:all .2s;}
+.retry-btn:hover{border-color:rgba(255,45,85,.4);color:#ff2d55;}
+
+/* OK — redirect flash */
+.ok-wrap{display:none;flex-direction:column;align-items:center;gap:12px;}
+.ok-icon{font-size:48px;}
+.ok-text{font-size:13px;color:#30d158;font-weight:700;}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&family=DM+Sans:wght@400;600;800&display=swap" media="print" onload="this.media='all'">
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">JdA</div>
+  <div class="logo-sub">Jeux des Abonnés · tube_direct</div>
+
+  <!-- CHARGEMENT -->
+  <div class="loading-wrap" id="loading">
+    <div class="spinner"></div>
+    <div>
+      <div class="loading-text">Vérification en cours…</div>
+      <div class="loading-files">
+        <div class="file-check" id="fc-index"><div class="dot"></div>index.html</div>
+        <div class="file-check" id="fc-launcher"><div class="dot"></div>launcher.html</div>
+        <div class="file-check" id="fc-retour"><div class="dot"></div>retour.js</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAINTENANCE -->
+  <div class="maint-wrap" id="maintenance">
+    <div class="maint-icon">🔧</div>
+    <div class="maint-title">Maintenance</div>
+    <div class="maint-sub">
+      La plateforme est en cours de mise à jour.<br>
+      Elle sera de retour très bientôt !
+    </div>
+    <div class="maint-badge">
+      <div class="maint-dot"></div>
+      Mise à jour en cours
+    </div>
+    <button class="retry-btn" onclick="lancerVerif()">↺ Réessayer</button>
+  </div>
+
+  <!-- OK -->
+  <div class="ok-wrap" id="ok-wrap">
+    <div class="ok-icon">✅</div>
+    <div class="ok-text">Tout est prêt, lancement…</div>
+  </div>
+</div>
+
+<script>
+const FICHIERS = [
+  { id: 'fc-index',    url: 'index.html' },
+  { id: 'fc-launcher', url: 'launcher.html' },
+  { id: 'fc-retour',   url: 'retour.js' },
+];
+
+async function verifierFichier(url) {
+  try {
+    const r = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+    return r.ok;
+  } catch(e) {
+    return false;
+  }
+}
+
+async function lancerVerif() {
+  // Reset UI
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('maintenance').style.display = 'none';
+  document.getElementById('ok-wrap').style.display = 'none';
+  FICHIERS.forEach(f => {
+    const el = document.getElementById(f.id);
+    el.className = 'file-check';
+  });
+
+  // Vérifier chaque fichier avec un petit délai visuel
+  let tousOK = true;
+  for (const f of FICHIERS) {
+    await new Promise(r => setTimeout(r, 400)); // délai visuel
+    const ok = await verifierFichier(f.url);
+    const el = document.getElementById(f.id);
+    el.className = 'file-check ' + (ok ? 'ok' : 'err');
+    if (!ok) tousOK = false;
+  }
+
+  await new Promise(r => setTimeout(r, 500));
+
+  if (tousOK) {
+    // Tout OK → afficher succès puis rediriger
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('ok-wrap').style.display = 'flex';
+    setTimeout(() => {
+      window.location.replace('index.html');
+    }, 800);
+  } else {
+    // Un fichier manque → maintenance
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('maintenance').style.display = 'flex';
+  }
+}
+
+// Lancer au chargement
+lancerVerif();
+</script>
+</body>
+</html>
