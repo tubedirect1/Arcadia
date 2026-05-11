@@ -771,7 +771,6 @@ async function renderHome(){
   const allIds=[...new Set(sections.flatMap(s=>s.jeux.map(j=>j.id)))];
   allIds.forEach(id=>loadStats(id));
   startLikesRealtime(allIds);
-  setTimeout(initVideoObserver, 100);
 }
 
 // ── Générateur de carte HTML (réutilisable)
@@ -787,7 +786,7 @@ function cardHtml(j,i=0){
     : '';
   // Badge 🔥 automatique si likes >= seuil relatif
   const isHot=!mort&&!prive&&(j._likes||0)>=_hotThreshold&&(j._likes||0)>0;
-  return `<div class="card${prive?' prive':''}${mort?' mort':''}" onclick="goLauncher('${j.id}')" style="animation-delay:${i*.05}s" ${j.video_url?`data-video-id="${extractYoutubeId(j.video_url)||''}"`:''}>
+  return `<div class="card${prive?' prive':''}${mort?' mort':''}" onclick="goLauncher('${j.id}')" style="animation-delay:${i*.05}s">
     ${prive&&CU?.is_admin?'<div class="card-overlay prive-ov">🔒 PRIVÉ</div>':''}
     ${mort?'<div class="card-overlay mort-ov">💀 MORT</div>':''}
     <div class="card-thumb" style="background:${bg}">
@@ -873,7 +872,7 @@ async function voirProfilCreateur(username,event){
           const note=j.nb_avis>0?`<span style="font-size:10px;font-weight:800;color:#ffd60a">★ ${parseFloat(j.note_moyenne).toFixed(1)}</span>`:'';
           return`<div onclick="document.getElementById('crea-profil-ov').remove();goLauncherFromProfil('${j.id}')" style="display:flex;align-items:center;gap:12px;padding:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(255,45,85,.3)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
             <div style="width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;background:${bg};display:flex;align-items:center;justify-content:center;font-size:20px">
-              ${j.video_url?`<iframe src="https://www.youtube.com/embed/${extractYoutubeId(j.video_url)||''}?rel=0" frameborder="0" style="width:100%;height:100%" allowfullscreen></iframe>`:j.image_url?`<img src="${j.image_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:''} 🎮
+              ${j.image_url?`<img src="${j.image_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:''} 🎮
             </div>
             <div style="flex:1;min-width:0">
               <div style="font-family:'Russo One',sans-serif;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(j.nom)}</div>
@@ -1997,71 +1996,17 @@ async function _supprimerAvis(avisId,jeuId){
 async function demanderMajCreations(id,nomActuel){
   const c=document.getElementById('submit-content');
   c.innerHTML='<div class="handle"></div><div style="padding:30px;text-align:center;color:var(--muted)">Chargement…</div>';
-  // Charger le jeu complet pour avoir video_url et verifie_plus
-  let videoActuelle=null;
-  try{
-    const res=await db(`jeux_externes?id=eq.${id}&select=video_url`);
-    if(res&&res[0]) videoActuelle=res[0].video_url||null;
-  }catch(e){}
-  const isVP=CU.verifie_plus;
-  const vidId=videoActuelle?extractYoutubeId(videoActuelle):null;
-
-  const videoSection=`
-    <div class="fg" style="margin-top:4px">
-      <label>Vidéo YouTube <span style="font-size:10px;font-weight:600;color:var(--muted)">(Vérifié+ · 1 vidéo max)</span></label>
-      ${videoActuelle&&vidId?`
-        <div id="maj-vid-current" style="margin-bottom:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;display:flex;align-items:center;gap:10px">
-          <img src="https://img.youtube.com/vi/${vidId}/mqdefault.jpg" style="width:72px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:11px;font-weight:800;color:var(--text);margin-bottom:2px">Vidéo actuelle</div>
-            <div style="font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(videoActuelle)}</div>
-          </div>
-          <button onclick="majSupprimerVideo('${id}')" style="flex-shrink:0;background:rgba(255,45,85,.12);border:1px solid rgba(255,45,85,.3);color:var(--red);font-size:11px;font-weight:800;padding:5px 10px;border-radius:8px;cursor:pointer">🗑 Retirer</button>
-        </div>`:
-        `<div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px">Aucune vidéo actuellement.</div>`
-      }
-      ${isVP?`
-        <input type="url" id="maj-video" placeholder="${videoActuelle?'Nouvelle URL pour remplacer…':'https://www.youtube.com/watch?v=xxxxx'}" style="width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;padding:10px 12px;border-radius:10px;outline:none">
-        <div class="fhint">Laisse vide pour ne pas changer. Remplace l'ancienne si tu en mets une nouvelle.</div>`:
-        `<div class="fhint">🔒 Réservé au Vérifié+.</div>`
-      }
-    </div>`;
 
   c.innerHTML=`<div class="handle"></div>
     <h2>✏️ Modifier le jeu</h2>
     <p class="sub">La mise à jour sera soumise à validation. L'URL du jeu ne peut pas être modifiée.</p>
     <div class="fg"><label>Nouveau nom</label><input type="text" id="maj-nom" placeholder="${nomActuel}" maxlength="60" value="${nomActuel}"></div>
     <div class="fg"><label>Nouvelle description</label><textarea id="maj-desc" rows="3" placeholder="Nouvelle description…" maxlength="300"></textarea></div>
-    ${videoSection}
     <div style="background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.12);border-radius:10px;padding:10px 12px;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">
       🖼️ Pour changer les images, utilise le bouton <b style="color:#00c8ff">Galerie</b> depuis Mes Créations.
     </div>
     <button class="btn-p" onclick="envoyerMajCreation('${id}')">📤 Envoyer la mise à jour</button>
     <button class="btn-s" onclick="renderMesCreations()">← Annuler</button>`;
-}
-async function majSupprimerVideo(id){
-  if(!confirm('Retirer la vidéo de ce jeu ?')) return;
-  try{
-    if(CU.verifie){
-      await dbP(`jeux_externes?id=eq.${id}`,{video_url:null,updated_at:new Date().toISOString()});
-      // Mettre à jour jMeta local si besoin
-      if(window.jeuxData){
-        const j=window.jeuxData.find(x=>x.id===id);
-        if(j) j.video_url=null;
-      }
-      T('✅ Vidéo retirée.','success');
-    } else {
-      // Compte non vérifié → passer par update_pending
-      await dbP(`jeux_externes?id=eq.${id}`,{update_pending:{video_url:null},statut:'modif_en_attente',last_update_request:new Date().toISOString()});
-      T('Suppression vidéo envoyée, en attente de validation.','success');
-    }
-    // Retirer l'aperçu vidéo de l'UI sans recharger tout
-    const box=document.getElementById('maj-vid-current');
-    if(box) box.remove();
-    const inp=document.getElementById('maj-video');
-    if(inp) inp.placeholder='https://www.youtube.com/watch?v=xxxxx';
-    renderHome();
-  }catch(e){T('Erreur : '+e.message,'error');}
 }
 
 async function envoyerMajCreation(id){
@@ -2082,16 +2027,7 @@ async function envoyerMajCreation(id){
   const pending={};
   if(nom)pending.nom=nom;
   if(desc)pending.description=desc;
-  // Vidéo : si champ présent et rempli → remplacer ; si vide → ne pas toucher
-  const majVideoInput=document.getElementById('maj-video');
-  if(majVideoInput){
-    const newVid=majVideoInput.value.trim();
-    if(newVid){
-      const vid=extractYoutubeId(newVid);
-      if(vid) pending.video_url=newVid;
-      else{T('URL YouTube invalide.','error');return;}
-    }
-  }
+
 
   try{
     if(CU.verifie){
@@ -2197,12 +2133,6 @@ async function renderSubmit(vue='liste'){
           </div>
         </div>
 
-        <!-- Champ vidéo YouTube — Vérifié+ seulement -->
-        <div class="fg">
-          <label>Vidéo YouTube <span style="font-size:10px;font-weight:600;color:var(--muted)">(optionnel${CU.verifie_plus?' · Vérifié+':' · 🔒 Vérifié+ requis'})</span></label>
-          <input type="url" id="en-video" placeholder="https://www.youtube.com/watch?v=xxxxx" ${CU.verifie_plus?'':'disabled'}>
-          <div class="fhint">${!CU.verifie_plus?'🔒 La vidéo se débloque avec le Vérifié+, après le Vérifié normal.':'La vidéo s\'affichera sur la fiche du jeu à la place de l\'image.'}</div>
-        </div>
         <!-- ══ SECTION 5 : TAGS ══ -->
         <div style="font-family:'Russo One',sans-serif;font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin:16px 0 10px;display:flex;align-items:center;gap:8px">⑤ Tags <span style="flex:1;height:1px;background:var(--border)"></span></div>
         <div class="fg">
@@ -2309,16 +2239,13 @@ async function renderSubmit(vue='liste'){
         <div style="background:rgba(255,45,85,.06);border:1px solid rgba(255,45,85,.15);border-radius:14px;padding:16px;margin-bottom:12px">
           <div style="font-family:'Russo One',sans-serif;font-size:13px;color:var(--red);margin-bottom:10px">🎬 Vidéo tutoriel — Comment soumettre ton jeu ?</div>
           <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:10px">📱 Vidéo en français · Durée : quelques minutes</div>
-          <div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000">
-            <iframe
-              src="https://www.youtube.com/embed/9kMjuTzJPdE"
-              title="Tutoriel Arcadia — Soumettre un jeu"
-              frameborder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowfullscreen
-              style="position:absolute;top:0;left:0;width:100%;height:100%;border-radius:10px">
-            </iframe>
-          </div>
+          <a href="https://www.youtube.com/watch?v=9kMjuTzJPdE" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.2);border-radius:12px;padding:12px 16px;text-decoration:none">
+            <span style="font-size:28px">▶️</span>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:var(--text)">Voir le tutoriel sur YouTube</div>
+              <div style="font-size:11px;color:var(--muted);font-weight:600;margin-top:2px">Ouvre YouTube dans un nouvel onglet</div>
+            </div>
+          </a>
         </div>
 
         <button class="btn-p" onclick="renderSubmit('formulaire')">+ Soumettre un jeu</button>
@@ -2462,19 +2389,6 @@ async function testerUrlJeu(){
 }
 
 
-// ── VIDÉO YOUTUBE ────────────────────────────────────────────────
-function extractYoutubeId(url){
-  if(!url) return null;
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  return m ? m[1] : null;
-}
-function videoEmbedHtml(videoUrl, imageUrl){
-  const vid = extractYoutubeId(videoUrl);
-  if(!vid) return imageUrl ? `<div style="width:100%;height:140px;border-radius:10px;overflow:hidden"><img src="${imageUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.display='none'"></div>` : '';
-  return `<div style="position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#000;margin-bottom:8px">
-    <iframe src="https://www.youtube.com/embed/${vid}?rel=0" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe>
-  </div>`;
-}
 
 // ── COMPATIBILITÉ ────────────────────────────────────────────────
 const COMPAT_CFG = {
@@ -2594,7 +2508,6 @@ async function confirmerSoumission(){
       url_locked:publicationDirecte,
       tags,screenshots,algo_data:_algoData,
       compatibilite:getCompatList(),
-      video_url:document.getElementById('en-video')?.value.trim()||null
     });
     if(publicationDirecte){
       T('✅ Jeu publié directement !','success');
@@ -4782,83 +4695,6 @@ if(_T_orig){
     else if(type==='error') _playUISound('error');
   };
 }
-// ── APERÇU VIDÉO AUTO SUR LES CARTES ────────────────────────────────────────
-let _videoObserver = null;
-const _videoTimers = new Map(); // cardEl -> timeoutId
-
-function initVideoObserver(){
-  // Déconnecter l'ancien observer si renderHome est rappelé
-  if(_videoObserver) _videoObserver.disconnect();
-
-  _videoObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const card = entry.target;
-      const vid  = card.dataset.videoId;
-      if(!vid) return;
-
-      if(entry.isIntersecting){
-        // Carte visible → lancer la vidéo après 300ms (évite les scroll rapides)
-        const delay = setTimeout(() => {
-          startCardVideo(card, vid);
-        }, 300);
-        _videoTimers.set(card, {type:'delay', id: delay});
-      } else {
-        // Carte hors écran → annuler tout et remettre l'image
-        stopCardVideo(card);
-      }
-    });
-  }, { threshold: 0.6 }); // 60% de la carte visible
-
-  document.querySelectorAll('.card[data-video-id]').forEach(card => {
-    _videoObserver.observe(card);
-  });
-}
-
-function startCardVideo(card, vid){
-  const thumb = card.querySelector('.card-thumb');
-  if(!thumb || thumb.querySelector('iframe.yt-preview')) return; // déjà en cours
-
-  // Mémoriser l'image existante
-  const img = thumb.querySelector('img');
-  const emoji = thumb.querySelector('.emoji-fb');
-  if(img) img.style.opacity = '0';
-  if(emoji) emoji.style.opacity = '0';
-
-  // Injecter l'iframe autoplay mute
-  const iframe = document.createElement('iframe');
-  iframe.className = 'yt-preview';
-  iframe.src = `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&controls=0&loop=1&playlist=${vid}&rel=0&modestbranding=1&playsinline=1`;
-  iframe.allow = 'autoplay; encrypted-media';
-  iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1;border-radius:inherit;';
-  thumb.appendChild(iframe);
-
-  // Après 10s → retirer l'iframe et remettre l'image
-  const timer = setTimeout(() => {
-    stopCardVideo(card);
-  }, 10000);
-  _videoTimers.set(card, {type:'play', id: timer});
-}
-
-function stopCardVideo(card){
-  // Annuler le timer en cours
-  const t = _videoTimers.get(card);
-  if(t) { clearTimeout(t.id); _videoTimers.delete(card); }
-
-  const thumb = card.querySelector('.card-thumb');
-  if(!thumb) return;
-
-  // Retirer l'iframe
-  const iframe = thumb.querySelector('iframe.yt-preview');
-  if(iframe) iframe.remove();
-
-  // Remettre l'image/emoji visibles
-  const img = thumb.querySelector('img');
-  const emoji = thumb.querySelector('.emoji-fb');
-  if(img) img.style.opacity = '';
-  if(emoji) emoji.style.opacity = '';
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
 </script>
 
 
