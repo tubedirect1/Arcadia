@@ -4,6 +4,7 @@ const ASSETS = [
   '/Arcadia/accueil.html',
   '/Arcadia/launcher.html',
   '/Arcadia/mascotte.png',
+  '/Arcadia/icon-app.png',
   '/Arcadia/gravity_lane.mp3',
   '/Arcadia/manifest.json',
   '/Arcadia/sw.js'
