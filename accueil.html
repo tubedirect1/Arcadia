@@ -2,6 +2,13 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff2d55">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Arcadia">
+  <link rel="apple-touch-icon" href="mascotte.png">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; frame-src https://challenges.cloudflare.com; connect-src 'self' https:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Arcadia</title>
@@ -2461,6 +2468,14 @@ function ouvrirFormulaireAlgo(){
         :`<div style="display:flex;flex-wrap:wrap;gap:6px">${q.opts.map(o=>`<button id="${q.id}-${o}" onclick="setAlgoSelect('${q.id}','${o}',this,'${q.id}')" style="padding:7px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:800;font-size:11px;cursor:pointer;transition:all .2s">${o}</button>`).join('')}</div>`
       }
     </div>`).join('')}
+    <div style="background:rgba(255,149,0,.06);border:1px solid rgba(255,149,0,.2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="check-proprio" style="margin-top:2px;accent-color:var(--orange);width:16px;height:16px;flex-shrink:0">
+        <span style="font-size:11px;font-weight:700;color:var(--text);line-height:1.6">
+          Je confirme que ce jeu est <span style="color:var(--orange)">ma propre création</span> et que mon pseudo Arcadia apparaît quelque part dans le jeu (menu, footer, crédits…). La republication de jeux existants est interdite.
+        </span>
+      </label>
+    </div>
     <button onclick="confirmerSoumission()" style="width:100%;background:linear-gradient(135deg,var(--orange),#ff6b00);color:#fff;border:none;font-family:'Russo One',sans-serif;font-size:14px;padding:14px;border-radius:12px;cursor:pointer;margin-top:6px">📤 Soumettre le jeu</button>
     <button onclick="document.getElementById('algo-ov').remove()" style="width:100%;background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.08);font-family:'DM Sans',sans-serif;font-weight:800;font-size:13px;padding:12px;border-radius:12px;cursor:pointer;margin-top:8px">← Retour</button>
   </div>`;
@@ -2480,6 +2495,10 @@ function setAlgoSelect(id,val,btn,prefix){
 }
 
 async function confirmerSoumission(){
+  if(!document.getElementById('check-proprio')?.checked){
+    T('Tu dois confirmer que le jeu t\'appartient et que ton pseudo est visible dedans.','error');
+    return;
+  }
   const nom=document.getElementById('en-nom').value.trim();
   const url=document.getElementById('en-url').value.trim();
   const desc=document.getElementById('en-desc').value.trim();
@@ -4799,5 +4818,14 @@ if(_T_orig){
   }, 500);
 })();
 </script>
+  <script>
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/Arcadia/sw.js')
+          .then(() => console.log('✅ SW Arcadia OK'))
+          .catch(e => console.warn('SW error:', e));
+      });
+    }
+  </script>
 </body>
 </html>
